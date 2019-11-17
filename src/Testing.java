@@ -5,31 +5,32 @@ import java.util.Random;
 public class Testing {
 
     /* define constants */
-    static int numberOfTrials = 50;
-    private static final int MAXSTRINGSIZE = 30;
+    static int numberOfTrials = 20;
+    private static final int MAXSTRINGSIZE = 17000;
     static String ResultsFolderPath = "/home/elizabeth/Results/LCS/"; // pathname to results folder
     static FileWriter resultsFile;
     static PrintWriter resultsWriter;
 
     public static void main(String[] args) {
 
-        //FibRecurDP method = new FibRecurDP();
-        //boolean correct = method.checkSortCorrectness();
         boolean correct =  Verification.verification(OptimizedLCS::LCS);
         System.out.println("Verification Pass?: " + correct);
         if(correct) {
             // run the whole experiment at least twice, and expect to throw away the data from the earlier runs, before java has fully optimized
             runFullExperiment("BruteForceLCS-Exp1-ThrowAway.txt");
-            runFullExperiment("BruteForceLCSx-Exp2.txt");
+            runFullExperiment("BruteForceLCS-Exp2.txt");
             runFullExperiment("BruteForceLCS-Exp3.txt");
         }
     }
 
     private static void runFullExperiment(String resultsFileName) {
-
+        String englishText1;
+        String englishText2;
         try {
             resultsFile = new FileWriter(ResultsFolderPath + resultsFileName);
             resultsWriter = new PrintWriter(resultsFile);
+            englishText1 = ReadTextAsString.readFileAsString("/home/elizabeth/Results/LCS/EnglishText/studyInScarlet.txt");
+            englishText2 = ReadTextAsString.readFileAsString("/home/elizabeth/Results/LCS/EnglishText/houndOfBaskervilles.txt");
         } catch (Exception e) {
             System.out.println("*****!!!!!  Had a problem opening the results file " + ResultsFolderPath + resultsFileName);
             return;
@@ -40,25 +41,27 @@ public class Testing {
         double lastAverageTime = -1;
         double doublingRatio = 0;
 
-        resultsWriter.println("#Bit size of x(n)  AverageTime"); // # marks a comment in gnuplot data
+        resultsWriter.println("#String size)  AverageTime"); // # marks a comment in gnuplot data
         resultsWriter.flush();
 
-        for (int inputSize = 1; inputSize <= MAXSTRINGSIZE; inputSize++) {
-            System.out.println("Running test for bit size " + inputSize + " ... ");
+        for (int inputSize = 1; inputSize <= MAXSTRINGSIZE; inputSize*=2) {
+            System.out.println("Running test for string size " + inputSize + " ... ");
             System.out.print("    Running trial batch...");
             System.gc();
             long batchElapsedTime = 0;
             for (long trial = 0; trial < numberOfTrials; trial++) {
                 System.out.print("    Generating test data...");
-                String s1 = randomStringOfSize(inputSize);
-                String s2 = randomStringOfSize(inputSize);
+                //String s1 = randomStringOfSize(inputSize);
+                //String s2 = randomStringOfSize(inputSize);
+                String s1 = englishTextStringOfSize(inputSize, englishText1);
+                String s2 = englishTextStringOfSize(inputSize, englishText2);
                 System.gc();
                 System.out.println("...done.");
-                System.out.println("String 1: " + s1);
-                System.out.println("String 2: " + s2);
                 TrialStopwatch.start();
-                String result = BruteForceLCS.LCS(s1, s2).substring;
+                String result = BruteForceLCS.LCS(s1,s2).substring;
                 batchElapsedTime = batchElapsedTime + TrialStopwatch.elapsedTime();
+                System.out.println(s1);
+                System.out.println(s2);
                 System.out.println(result);
             }
             double averageTimePerTrialInBatch = (double) batchElapsedTime / (double) numberOfTrials; // calculate the average time per trial in this batch
@@ -103,4 +106,13 @@ public class Testing {
         return r.toString();
     }
 
+    //tip: choose a random start index for the substring between 0 and bookString.Length() - N
+    public static String englishTextStringOfSize(int size, String str){
+        int lowerLimit = 0;
+        int upperLimit = str.length()-size;
+
+        Random random = new Random();
+        int index = lowerLimit + (int)(random.nextFloat() * (upperLimit - lowerLimit + 1));
+        return str.substring(index, index+size);
+    }
 }
